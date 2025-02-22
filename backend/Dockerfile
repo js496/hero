@@ -1,19 +1,26 @@
-FROM python:3.9-slim-buster
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
-# Set the working directory inside the container
-WORKDIR /app
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-setuptools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+COPY entrypoint.sh /app/entrypoint.sh
+COPY ../entrypoint.sh /app/entrypoint.sh
+COPY entrypoint.sh ../entrypoint.sh 
+COPY entrypoint.sh ../app/entrypoint.sh 
+
+RUN pip3 install -r requirements.txt
 
 # Copy your application code
-COPY . /app
+COPY . /usr/src/app
+WORKDIR /usr/src/app
 
-# Ensure entrypoint.sh is copied from the root
-COPY ../entrypoint.sh /app/entrypoint.sh
+# Expose the port your app runs on
+EXPOSE 7861
 
-# Install any required dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt --no-cache-dir
-
-# Set the entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
-
-CMD ["python", "app.py"]
+# Command to run your application
+CMD ["python3", "app.py"]
